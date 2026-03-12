@@ -1,0 +1,4 @@
+v 4
+file / "/home/ct/Documents/RTL/RTL_UART/uart_rx.vhd" "bbc23ee006e91021a6bd337433caf2fc3fece958" "20260312044152.597":
+  entity uart_rx at 1( 0) + 0 on 11;
+  architecture rtl_uart_rx of uart_rx at 20( 501) + 0 on 12;
