@@ -1,0 +1,13 @@
+# Simulation build artifacts
+sim_build/
+
+# Python cache
+__pycache__/
+*.pyc
+
+# Cocotb results
+results.xml
+
+# GHDL artifacts
+*.o
+*.cf

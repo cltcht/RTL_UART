@@ -1,0 +1,6 @@
+<testsuites name="results">
+  <testsuite name="all" package="all">
+    <property name="random_seed" value="1773675607" />
+    <testcase name="test_uart" classname="test_uart_tx" file="/home/ct/Documents/RTL/RTL_UART/uart_tx/test_uart_tx.py" lineno="62" time="0.00164031982421875" sim_time_ns="22.0" ratio_time="13412.018604651163" />
+  </testsuite>
+</testsuites>

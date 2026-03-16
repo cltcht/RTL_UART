@@ -1,0 +1,11 @@
+#!/bin/bash
+# run_tests.sh
+set -e
+
+echo "=== TEST UART RX ==="
+make -C uart_rx
+
+echo "=== TEST UART TX ==="
+make -C uart_tx
+
+echo "=== TOUS LES TESTS PASSÉS ==="
