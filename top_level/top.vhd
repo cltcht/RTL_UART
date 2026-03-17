@@ -1,34 +1,51 @@
 library ieee;
   use ieee.std_logic_1164.all;
   use ieee.numeric_std.all;
+package ../uart_rx/uart_rx.vhd;
 
-entity uart_tx is
+
+
+entity top is
     generic (
-        DATA_BITS    : integer := 8;
-        CLK_FREQ     : integer := 115200;  -- fréquence horloge système
-        BAUD_RATE    : integer := 115200
+        DATA_BITS : integer := 12;
+        CLK_UART_RX_FREQ : integer 50_000_000;
+        BAUD_RX_RATE : integer 115200;
     );
     port (
         clk_i      : in  std_logic;
         rst_i      : in  std_logic;
-        data_i     : in std_logic_vector((DATA_BITS-1) downto 0);
-        tx_o       : out  std_logic;
-        tx_order_i : in std_logic;
-        flag_tx_o  : out std_logic
+        --UART_RX
+        uart_rx_data_i : in std_logic_vector((DATA_BITS-1) downto 0);
+        
+        --UART_TX
+        uart_tx_data_o : in std_logic_vector((DATA_BITS-1) downto 0)
+        
     );
-end entity uart_tx;
+end entity top;
 
-architecture rtl_uart_tx of uart_tx is
+architecture rtl_top of top is
 
-     -- latch pour enregistrer data_i durant la communication UART
+     -- latch pour enregistrer uart_rx_data_i 
     signal b : std_logic_vector((DATA_BITS-1) downto 0);
     signal b_saved : integer range 0 to 1; --booléen pour indiquer si les data ont étés sauvés
 
-    -- Rapport CLK_FREQ / BAUD_RATE = nombre de coups d'horloge par bit
-    constant CLKS_PER_BIT : integer := CLK_FREQ / BAUD_RATE; -- 1 coup d'horloge / bit envoye
+    -- Rapport CLKS_RX_PER_BIT / BAUD_RX_RATE = nombre de coups d'horloge Rx par bit reçu
+    constant CLKS_RX_PER_BIT : integer := CLK_UART_RX_FREQ / BAUD_RX_RATE; -- 1 coup d'horloge / bit envoye
 
-    signal clk_count : integer range 0 to CLKS_PER_BIT - 1;
-    signal bit_count : integer range 0 to DATA_BITS+2;
+    component uart_rx is
+    generic (
+        DATA_BITS    : integer := 12;
+        CLK_FREQ     : integer := 50_000_000;  -- fréquence horloge système
+        BAUD_RATE    : integer := 115200
+    );
+    port (
+        clk_i  : in  std_logic;
+        rst_i  : in  std_logic;
+        rx_i   : in  std_logic;
+        data_o : out std_logic_vector((DATA_BITS-1) downto 0);
+        flag_rx_o : out std_logic
+    );
+    end component;
 
 begin
 
@@ -89,4 +106,4 @@ begin
 
 end process;
 
-end architecture rtl_uart_tx;
+end architecture top;

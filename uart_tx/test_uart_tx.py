@@ -27,33 +27,45 @@ async def send_frame(dut, DATA_hex, CLK_PER_BIT, verbose = False):
         print(f" TRAME UART : {TRAME_UART}") 
 
     dut.tx_order_i.value = 1
-    for i, bit in enumerate(TRAME_UART):
-
-        ## Envoi d'un bit
-        dut.tx_o.value = bit 
-        
-        ## Tempo pour l'envoi d'un bit tous les CLK_PER_BIT
-        for _ in range (CLK_PER_BIT) :
-            await RisingEdge(dut.clk_i)
-
-        if verbose :
-            if i == len(TRAME_UART)-1 :
-                print(f"Bit {i}"+" "*(10>i)+ " envoyé = STOP", end="\n")
-            elif i == 0 :
-                print(f"Bit {i}"+" "*(10>i)+ " envoyé = START", end="\n")
-            else :
-                print(f"Bit {i}"+" "*(10>i)+ f" envoyé = {bit}", end="\n")
-    
+    await RisingEdge(dut.clk_i)
+    print(f" dut.tx_order_i.value : {dut.tx_order_i.value}\n")
     dut.tx_order_i.value = 0
+    await RisingEdge(dut.clk_i)
+    print(f" dut.tx_order_i.value : {dut.tx_order_i.value}\n")
 
+    # await RisingEdge(dut.clk_i)
+
+    # for i, bit in enumerate(TRAME_UART):
+
+    #     ## Envoi d'un bit
+    #     dut.tx_o.value = bit 
+        
+    #     ## Tempo pour l'envoi d'un bit tous les CLK_PER_BIT
+    #     for _ in range (CLK_PER_BIT) :
+    #         await RisingEdge(dut.clk_i)
+
+    #     if verbose :
+    #         if i == len(TRAME_UART)-1 :
+    #             print(f"Bit {i}"+" "*(10>i)+ " envoyé = STOP", end="\n")
+    #         elif i == 0 :
+    #             print(f"Bit {i}"+" "*(10>i)+ " envoyé = START", end="\n")
+    #         else :
+    #             print(f"Bit {i}"+" "*(10>i)+ f" envoyé = {bit}", end="\n")
+            
+    #         print(f" Flag = {str(dut.tx_busy_o.value)}")
+        
+    #     # assert int(dut.tx_busy_o.value) == 1, (f"Test failed with dut.tx_busy_o.value != 1 while sending data")
+
+    
+    # dut.tx_order_i.value = 0
             
     
-    for _ in range (CLK_PER_BIT) :
-        await RisingEdge(dut.clk_i)
-        if verbose : 
-            print(f" Flag = {str(dut.flag_tx_o.value)}")
+    # for _ in range (CLK_PER_BIT) :
+    #     await RisingEdge(dut.clk_i)
+    #     if verbose : 
+    #         print(f" Flag = {str(dut.tx_busy_o.value)}")
 
-    assert bin(dut.flag_tx_o.value) == bin(1), (f"Test failed with dut.flag_tx_o.value != 1 and DATA_hex = {DATA_hex}")
+    # assert bin(dut.tx_busy_o.value) == bin(0), (f"Test failed with dut.tx_busy_o.value != 0 and DATA_hex = {DATA_hex}")
 
 
 

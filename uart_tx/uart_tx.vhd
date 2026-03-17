@@ -14,7 +14,7 @@ entity uart_tx is
         data_i     : in std_logic_vector((DATA_BITS-1) downto 0);
         tx_o       : out  std_logic;
         tx_order_i : in std_logic;
-        flag_tx_o  : out std_logic
+        tx_busy_o  : out std_logic
     );
 end entity uart_tx;
 
@@ -36,9 +36,10 @@ process(clk_i, rst_i)
 begin
     if rst_i = '1' then
         tx_o <= '1';
-        flag_tx_o <= '0';
+        tx_busy_o <= '0';
         --internal signals
         b <= (others => '0');
+        b_saved <= 0;
         clk_count <= 0 ;
         bit_count <= 0;
 
@@ -49,7 +50,7 @@ begin
                 if b_saved = 0 then
                     b <= data_i;
                     b_saved <= 1;
-                    flag_tx_o <= '0';
+                    tx_busy_o <= '1';
                 end if ;
 
 
@@ -69,7 +70,7 @@ begin
 
                     else 
                         tx_o <= '1'; --STOP bit
-                        flag_tx_o <= '1';
+                        tx_busy_o <= '0';
 
                         --Reset for next UART Tx
                         b <= (others => '0');
