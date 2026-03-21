@@ -68,8 +68,10 @@ begin
                         bit_count <= bit_count + 1;
                         
 
-                    else 
+                    elsif bit_count < DATA_BITS + 2 then 
                         tx_o <= '1'; --STOP bit
+                        bit_count <= bit_count + 1;
+                    else
                         tx_busy_o <= '0';
 
                         --Reset for next UART Tx

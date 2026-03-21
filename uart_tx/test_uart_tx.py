@@ -1,74 +1,97 @@
+#C. Cho.
+#############
+# LIBRARIES #
+#############
 import cocotb
-from cocotb.clock import Clock
-from cocotb.triggers import RisingEdge
+from cocotb.clock import Clock, Timer
+from cocotb.triggers import *
 import numpy as np
+from asyncio import CancelledError
+import sys
+sys.path.append("../common")
+from common.clock_and_logger import *
+from common.common_uart import *
 
 
 
-def build_frame_UART(DATA_hex, START: bool, STOP: bool, len_data):
+#############
+# FUNCTIONS #
+#############
+async def send_frame(dut, DATA_hex, CLK_PER_BIT, len_data, verbose = False):
+    """Send uart frame to DUT
 
-    #Conversion binaire + zero padding 
-    DATA_bin = bin(DATA_hex)[2:].zfill(len_data)
-
-    ## Reverse data for LSB first
-    DATA_lsb_first = [int(DATA_bin[len(DATA_bin)-1-i]) for i in range (len(DATA_bin))]
-
-    TRAME_UART = [START] + DATA_lsb_first + [STOP]
-    return TRAME_UART
-
-
-async def send_frame(dut, DATA_hex, CLK_PER_BIT, verbose = False):
+    Args:
+        dut (cocotb dut): Cocotb device under test
+        DATA_hex (int): Hexadecimal data to be sent
+        CLK_PER_BIT (int): Number of clk hit per sent bit  = Clk frequency//baud rate
+        len_data (int): Number of hexadecimal figures in DATA_hex
+        verbose (bool, optional): Print info in log. Defaults to False.
+    """
 
     START = 0
     STOP = 1
-    TRAME_UART = build_frame_UART(DATA_hex, START, STOP, len_data = 8)
+    TRAME_UART = build_frame_UART(DATA_hex, START, STOP, len_data)
     if verbose :
-        print(f" DATA_hex : {hex(DATA_hex)}")
-        print(f" TRAME UART : {TRAME_UART}") 
+        logger.print_info(f" DATA_hex : {hex(DATA_hex)}")
+        logger.print_info(f" TRAME UART : {TRAME_UART}") 
 
+    ## Goal : Test that DATA_hex == sum{bit(k)*2**k}
+    print("len_data : ", len_data)
+    print("TRAME_UART : ", TRAME_UART)
+    assert DATA_hex != np.sum([n*b for (n, b) in zip(TRAME_UART[1:-1],[2**k for k in range (len(TRAME_UART[1:-1]))])])
+
+    # First Time step
+    await RisingEdge(dut.clk_i)
+    await ReadWrite(dut.clk_i)  # First Evaluation cycle
     dut.tx_order_i.value = 1
+     
+    if verbose :
+        await ReadWrite(dut.clk_i)
+        logger.print_info(f" dut.tx_order_i.value : {dut.tx_order_i.value}\n")
+
+
+    for i, bit in enumerate(TRAME_UART):
+        
+        ## Tempo pour l'envoi d'un bit tous les CLK_PER_BIT
+        for _ in range (CLK_PER_BIT) :
+            await RisingEdge(dut.clk_i)
+            
+        await ReadWrite(dut.clk_i)  
+        dut.tx_o.value = bit 
+
+        if verbose :
+            if i == len(TRAME_UART)-1 :
+                logger.print_info(f"Bit {i}"+" "*(10>i)+ " envoyé = STOP", 
+                )
+            elif i == 0 :
+                logger.print_info(f"Bit {i}"+" "*(10>i)+ " envoyé = START", end="\n")
+            else :
+                logger.print_info(f"Bit {i}"+" "*(10>i)+ f" envoyé = {bit}", end="\n")
+            
+            logger.print_info(f" Flag = {str(dut.tx_busy_o.value)}")
+        assert bin(dut.tx_busy_o.value) == bin(1), (f"Test failed with dut.tx_busy_o.value != 0 and DATA_hex = {DATA_hex}")
+
+    
     await RisingEdge(dut.clk_i)
-    print(f" dut.tx_order_i.value : {dut.tx_order_i.value}\n")
+    await ReadWrite(dut.clk_i) 
     dut.tx_order_i.value = 0
-    await RisingEdge(dut.clk_i)
-    print(f" dut.tx_order_i.value : {dut.tx_order_i.value}\n")
-
-    # await RisingEdge(dut.clk_i)
-
-    # for i, bit in enumerate(TRAME_UART):
-
-    #     ## Envoi d'un bit
-    #     dut.tx_o.value = bit 
-        
-    #     ## Tempo pour l'envoi d'un bit tous les CLK_PER_BIT
-    #     for _ in range (CLK_PER_BIT) :
-    #         await RisingEdge(dut.clk_i)
-
-    #     if verbose :
-    #         if i == len(TRAME_UART)-1 :
-    #             print(f"Bit {i}"+" "*(10>i)+ " envoyé = STOP", end="\n")
-    #         elif i == 0 :
-    #             print(f"Bit {i}"+" "*(10>i)+ " envoyé = START", end="\n")
-    #         else :
-    #             print(f"Bit {i}"+" "*(10>i)+ f" envoyé = {bit}", end="\n")
-            
-    #         print(f" Flag = {str(dut.tx_busy_o.value)}")
-        
-    #     # assert int(dut.tx_busy_o.value) == 1, (f"Test failed with dut.tx_busy_o.value != 1 while sending data")
-
-    
-    # dut.tx_order_i.value = 0
             
     
-    # for _ in range (CLK_PER_BIT) :
-    #     await RisingEdge(dut.clk_i)
-    #     if verbose : 
-    #         print(f" Flag = {str(dut.tx_busy_o.value)}")
+    for _ in range (CLK_PER_BIT) :
+        await RisingEdge(dut.clk_i)
+        if verbose : 
+            await ReadWrite(dut.clk_i) 
+            logger.print_info(f" Flag = {str(dut.tx_busy_o.value)}")
 
-    # assert bin(dut.tx_busy_o.value) == bin(0), (f"Test failed with dut.tx_busy_o.value != 0 and DATA_hex = {DATA_hex}")
+    assert bin(dut.tx_busy_o.value) == bin(0), (f"Test failed with dut.tx_busy_o.value != 0 and DATA_hex = {DATA_hex}")
 
 
 
+##############
+# TESTS CCTB #
+##############
+
+logger = sim_logger("uart TX")
 
 
 @cocotb.test()
@@ -81,13 +104,20 @@ async def test_uart(dut):
     CLK_PER_BIT = int(115200/115200) 
 
     # Reset
+    await RisingEdge(dut.clk_i)
+    await ReadWrite(dut.clk_i)
     dut.rst_i.value = 1
     dut.tx_o.value = 0
+
     await RisingEdge(dut.clk_i)
+    await ReadWrite(dut.clk_i)
     dut.rst_i.value = 0
 
-    await send_frame(dut, 0xFF, CLK_PER_BIT, verbose = True)
-    await send_frame(dut, 0xF0, CLK_PER_BIT, verbose = True)
+    await send_frame(dut, 0xFF, CLK_PER_BIT, len_data = 8, verbose = False)
+    await send_frame(dut, 0xFF, CLK_PER_BIT, len_data = 5, verbose = False)
+
+
+
 
 
 
