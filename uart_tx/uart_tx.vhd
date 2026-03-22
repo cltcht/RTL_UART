@@ -4,7 +4,7 @@ library ieee;
 
 entity uart_tx is
     generic (
-        DATA_BITS    : integer := 8;
+        DATA_BITS    : integer := 12;
         CLK_FREQ     : integer := 115200;  -- fréquence horloge système
         BAUD_RATE    : integer := 115200
     );

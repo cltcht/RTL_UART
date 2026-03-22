@@ -27,18 +27,20 @@ async def send_frame(dut, DATA_hex, CLK_PER_BIT, len_data, verbose = False):
         len_data (int): Number of hexadecimal figures in DATA_hex
         verbose (bool, optional): Print info in log. Defaults to False.
     """
-
+    ## Goal : Make sure with user that it's a wanted property
+    try :
+        assert dut.DATA_BITS.value == len_data
+    except :
+        critical_error_logger = sim_logger("send_frame")
+        critical_error_logger.print_critical_error(f"Length of data len_data = {len_data} bits, is different from RTL design data length : dut.DATA_BITS = {int(dut.DATA_BITS.value)} ")
+        raise ValueError
+    
     START = 0
     STOP = 1
     TRAME_UART = build_frame_UART(DATA_hex, START, STOP, len_data)
     if verbose :
         logger.print_info(f" DATA_hex : {hex(DATA_hex)}")
         logger.print_info(f" TRAME UART : {TRAME_UART}") 
-
-    ## Goal : Test that DATA_hex == sum{bit(k)*2**k}
-    print("len_data : ", len_data)
-    print("TRAME_UART : ", TRAME_UART)
-    assert DATA_hex != np.sum([n*b for (n, b) in zip(TRAME_UART[1:-1],[2**k for k in range (len(TRAME_UART[1:-1]))])])
 
     # First Time step
     await RisingEdge(dut.clk_i)
@@ -68,7 +70,7 @@ async def send_frame(dut, DATA_hex, CLK_PER_BIT, len_data, verbose = False):
             else :
                 logger.print_info(f"Bit {i}"+" "*(10>i)+ f" envoyé = {bit}", end="\n")
             
-            logger.print_info(f" Flag = {str(dut.tx_busy_o.value)}")
+            logger.print_info(f" Busy flag = {str(dut.tx_busy_o.value)}")
         assert bin(dut.tx_busy_o.value) == bin(1), (f"Test failed with dut.tx_busy_o.value != 0 and DATA_hex = {DATA_hex}")
 
     
@@ -81,7 +83,7 @@ async def send_frame(dut, DATA_hex, CLK_PER_BIT, len_data, verbose = False):
         await RisingEdge(dut.clk_i)
         if verbose : 
             await ReadWrite(dut.clk_i) 
-            logger.print_info(f" Flag = {str(dut.tx_busy_o.value)}")
+            logger.print_info(f" Busy flag = {str(dut.tx_busy_o.value)}")
 
     assert bin(dut.tx_busy_o.value) == bin(0), (f"Test failed with dut.tx_busy_o.value != 0 and DATA_hex = {DATA_hex}")
 
@@ -113,8 +115,8 @@ async def test_uart(dut):
     await ReadWrite(dut.clk_i)
     dut.rst_i.value = 0
 
-    await send_frame(dut, 0xFF, CLK_PER_BIT, len_data = 8, verbose = False)
-    await send_frame(dut, 0xFF, CLK_PER_BIT, len_data = 5, verbose = False)
+    # await send_frame(dut, 0xFF, CLK_PER_BIT, len_data = 8, verbose = False)
+    await send_frame(dut, 0xFFA, CLK_PER_BIT, len_data = 12, verbose = True)
 
 
 
