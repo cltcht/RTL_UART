@@ -1,11 +1,7 @@
 #!/bin/bash
-# run_tests.sh
 set -e
 
-echo "=== TEST UART RX ==="
-make -C uart_rx
+MODULE=${1:-"uart_tx"}
 
-echo "=== TEST UART TX ==="
-make -C uart_tx
-
-echo "=== TOUS LES TESTS PASSÉS ==="
+echo "=== TEST $MODULE ==="
+make -C $MODULE
