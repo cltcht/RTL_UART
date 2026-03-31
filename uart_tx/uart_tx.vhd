@@ -5,8 +5,8 @@ library ieee;
 entity uart_tx is
     generic (
         DATA_BITS    : integer := 8;
-        CLK_FREQ     : integer := 115200;  -- fréquence horloge système
-        BAUD_RATE    : integer := 115200
+        CLK_FREQ     : integer := 115200;  -- frequency of FPGA
+        BAUD_RATE    : integer := 115200   -- Uart frequency
     );
     port (
         clk_i      : in  std_logic;
@@ -20,41 +20,54 @@ end entity uart_tx;
 
 architecture rtl_uart_tx of uart_tx is
 
-     -- latch pour enregistrer data_i durant la communication UART
+     -- latch to save data_i while doing UART transactions
     signal b : std_logic_vector((DATA_BITS-1) downto 0);
-    signal b_saved : integer range 0 to 1; --booléen pour indiquer si les data ont étés sauvés
 
-    -- Rapport CLK_FREQ / BAUD_RATE = nombre de coups d'horloge par bit
-    constant CLKS_PER_BIT : integer := CLK_FREQ / BAUD_RATE; -- 1 coup d'horloge / bit envoye
+    -- CLK_FREQ / BAUD_RATE = Clk hits per bit being sent
+    constant CLKS_PER_BIT : integer := CLK_FREQ / BAUD_RATE; -- 1 hit / bit
 
     signal clk_count : integer range 0 to CLKS_PER_BIT - 1;
     signal bit_count : integer range 0 to DATA_BITS+2;
 
+    --flags
+    signal frame_sent : std_logic; --flag to know if dataframe has been sent before tx_order reset
+    signal is_busy : std_logic;    -- flag to know if component is busy
+    signal b_saved : std_logic;    --flag to know if data has been saved in latch
 begin
 
+tx_busy_o <= is_busy;
 process(clk_i, rst_i)
 begin
-    if rst_i = '1' then
+    if rst_i = '1' then --reset system
         tx_o <= '1';
-        tx_busy_o <= '0';
+        is_busy <= '0';
         --internal signals
         b <= (others => '0');
-        b_saved <= 0;
+        b_saved <= '0';
         clk_count <= 0 ;
         bit_count <= 0;
+        frame_sent <= '0';
 
         
     elsif rising_edge(clk_i) then
-
-            if tx_order_i = '1' then
-                if b_saved = 0 then
-                    b <= data_i;
-                    b_saved <= 1;
-                    tx_busy_o <= '1';
+        -- FRAME State : Nothing to send, nothing is being sent
+            if (tx_order_i = '0') and (frame_sent = '0') and (is_busy = '0') then
+                --Reset for next UART Tx
+                b <= (others => '0');
+                b_saved <= '0';
+                clk_count <= 0 ;
+                bit_count <= 0;
+        -- FRAME State : Frame isn't being sent/already sent, received order
+            elsif (tx_order_i = '1') and (frame_sent = '0') and (is_busy = '0') then
+                if b_saved = '0' then
+                    b <= data_i; --saving data in a latch for safety, anything can happen to data_i
+                    b_saved <= '1';
+                    is_busy <= '1';
                 end if ;
 
-
-                -- Envoi d'un bit
+        -- FRAME State : Frame is being sent
+            elsif (is_busy = '1') and (frame_sent = '0') then
+                -- Sending i-th bit
                 if clk_count < CLKS_PER_BIT -1 then -- CLKS_PER_BIT = 1
                     clk_count <= clk_count + 1;
 
@@ -68,24 +81,35 @@ begin
                         bit_count <= bit_count + 1;
                         
 
-                    elsif bit_count < DATA_BITS + 2 then 
+                    elsif bit_count < DATA_BITS + 2 then --"START + DATA + STOP" = DATA_BITS + 2
                         tx_o <= '1'; --STOP bit
                         bit_count <= bit_count + 1;
                     else
-                        tx_busy_o <= '0';
-
-                        --Reset for next UART Tx
-                        b <= (others => '0');
-                        b_saved <= 0;
-                        clk_count <= 0 ;
-                        bit_count <= 0;
-
+                        frame_sent <= '1';
 
                     end if;
                 clk_count <= 0; --reset for next bit
 
                 end if;
-            
+        -- FRAME State : Already sent, waiting for tx_order_i reset
+        -- for safety do not release busy flag here
+            elsif (tx_order_i = '1') and (frame_sent = '1') and (is_busy = '1') then
+                --Reset for next UART Tx
+                b <= (others => '0');
+                b_saved <= '0';
+                clk_count <= 0 ;
+                bit_count <= 0;
+
+        -- FRAME State : Already sent, tx_order_i was resetted 
+        -- => can reset frame_sent safely and release busy flag
+            elsif (tx_order_i = '0') and (frame_sent = '1') and (is_busy = '1') then
+                frame_sent <= '0';
+                is_busy <= '0';
+                --Reset for next UART Tx
+                b <= (others => '0');
+                b_saved <= '0';
+                clk_count <= 0 ;
+                bit_count <= 0;
             end if;
 
     end if;

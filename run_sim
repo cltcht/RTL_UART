@@ -1,7 +1,14 @@
 #!/bin/bash
-set -e
 
 MODULE=${1:-"uart_tx"}
 
 echo "=== TEST $MODULE ==="
 make -C $MODULE
+EXIT_CODE=$?
+
+# Lancer GTKWave même si le test a échoué
+gtkwave $MODULE/simulation.vcd -S $MODULE/waves.tcl
+
+
+# Retourner le code d'erreur original
+exit $EXIT_CODE

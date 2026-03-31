@@ -1,0 +1,110 @@
+$date
+  Tue Mar 31 15:54:39 2026
+$end
+$version
+  GHDL v0
+$end
+$timescale
+  1 ps
+$end
+$scope module standard $end
+$upscope $end
+$scope module std_logic_1164 $end
+$upscope $end
+$scope module numeric_std $end
+$upscope $end
+$scope module uart_tx $end
+$var reg 1 ! clk_i $end
+$var reg 1 " rst_i $end
+$var reg 8 # data_i[7:0] $end
+$var reg 1 $ tx_o $end
+$var reg 1 % tx_order_i $end
+$var reg 1 & tx_busy_o $end
+$var reg 8 ' b[7:0] $end
+$var integer 32 ( clk_count $end
+$var integer 32 ) bit_count $end
+$var reg 1 * frame_sent $end
+$var reg 1 + is_busy $end
+$var reg 1 , b_saved $end
+$upscope $end
+$enddefinitions $end
+#0
+1!
+1"
+b00000000 #
+1$
+0%
+0&
+b00000000 '
+b0 (
+b0 )
+0*
+0+
+0,
+#500
+0!
+#1000
+1!
+0"
+#1500
+0!
+#2000
+1!
+#2500
+0!
+#3000
+1!
+1%
+#3500
+0!
+#4000
+1!
+1&
+1+
+1,
+#4500
+0!
+#5000
+1!
+0$
+b1 )
+#5500
+0!
+#6000
+1!
+b10 )
+#6500
+0!
+#7000
+1!
+b11 )
+#7500
+0!
+#8000
+1!
+b100 )
+#8500
+0!
+#9000
+1!
+b101 )
+#9500
+0!
+#10000
+1!
+b110 )
+#10500
+0!
+#11000
+1!
+b111 )
+#11500
+0!
+#12000
+1!
+b1000 )
+#12500
+0!
+#13000
+1!
+b1001 )

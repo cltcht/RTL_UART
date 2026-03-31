@@ -1,6 +1,8 @@
 <testsuites name="results">
   <testsuite name="all" package="all">
-    <property name="random_seed" value="1774779588" />
-    <testcase name="unitary_test_uart_tx" classname="test_uart_tx" file="/home/ct/Documents/RTL/RTL_UART/uart_tx/test_uart_tx.py" lineno="119" time="0.0034546852111816406" sim_time_ns="14.0" ratio_time="4052.4676328502414" />
+    <property name="random_seed" value="1774943680" />
+    <testcase name="unitary_test_uart_tx" classname="test_uart_tx" file="/home/ct/Documents/RTL/RTL_UART/uart_tx/test_uart_tx.py" lineno="148" time="0.0031311511993408203" sim_time_ns="13.0" ratio_time="4151.827609837813">
+      <failure error_type="AssertionError" error_msg="Test failed with dut.tx_o.value == TRAME_UART[i] and i = 9&#10;assert '0b0' == '0b1'&#10; +  where '0b0' = bin(Logic('0'))&#10; +    where Logic('0') = LogicObject(uart_tx.tx_o).value&#10; +      where LogicObject(uart_tx.tx_o) = HierarchyObject(uart_tx).tx_o&#10; +  and   '0b1' = bin(1)" />
+    </testcase>
   </testsuite>
 </testsuites>
