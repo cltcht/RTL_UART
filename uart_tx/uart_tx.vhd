@@ -60,9 +60,9 @@ begin
         -- FRAME State : Frame isn't being sent/already sent, received order
             elsif (tx_order_i = '1') and (frame_sent = '0') and (is_busy = '0') then
                 if b_saved = '0' then
-                    b <= data_i; --saving data in a latch for safety, anything can happen to data_i
+                    b <= data_i; --saving data in a latch for safety as anything can happen to data_i
                     b_saved <= '1';
-                    is_busy <= '1';
+                    is_busy <= '1'; --starting Tx
                 end if ;
 
         -- FRAME State : Frame is being sent

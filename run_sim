@@ -7,8 +7,8 @@ make -C $MODULE
 EXIT_CODE=$?
 
 # Lancer GTKWave même si le test a échoué
-gtkwave $MODULE/simulation.vcd -S $MODULE/waves.tcl
-
+gtkwave $MODULE/simulation.vcd -S $MODULE/waves.tcl 
+gtkwave --exit
 
 # Retourner le code d'erreur original
 exit $EXIT_CODE

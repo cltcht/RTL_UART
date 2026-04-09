@@ -1,6 +1,8 @@
 <testsuites name="results">
   <testsuite name="all" package="all">
-    <property name="random_seed" value="1774965806" />
-    <testcase name="runner" classname="test_uart_tx" file="/home/ct/Documents/RTL/RTL_UART/uart_tx/test_uart_tx.py" lineno="224" time="0.0027642250061035156" sim_time_ns="32.0" ratio_time="11576.481628428497" />
+    <property name="random_seed" value="1775749760" />
+    <testcase name="two_frames_random_data" classname="test_uart_tx" file="/home/ct/Documents/RTL/RTL_UART/uart_tx/test_uart_tx.py" lineno="135" time="0.03372502326965332" sim_time_ns="51600000.0" ratio_time="1530021183.0077834">
+      <failure error_type="ValueError" error_msg="" />
+    </testcase>
   </testsuite>
 </testsuites>

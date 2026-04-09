@@ -39,4 +39,5 @@ def build_frame_UART(DATA_hex:float, START: bool, STOP: bool, len_data:int)->lis
     DATA_lsb_first = [int(DATA_bin[len(DATA_bin)-1-i]) for i in range (len(DATA_bin))]
 
     TRAME_UART = [START] + DATA_lsb_first + [STOP]
+
     return TRAME_UART
