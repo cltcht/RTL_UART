@@ -1,0 +1,35 @@
+name: RTL Simulation
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  simulate:
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        shell: bash -el {0}
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Install GHDL
+      shell: bash
+      run: sudo apt install -y ghdl
+
+    - name: Setup conda environment
+      uses: conda-incubator/setup-miniconda@v3
+      with:
+        environment-file: environment.yml
+        activate-environment: rtl
+        auto-activate-base: false
+
+    - name: Run UART TX tests
+      run: |
+        make -C uart_tx COCOTB_TEST_MODULES="test_uart_tx"
+        make -C uart_tx COCOTB_TEST_MODULES="test_uart_tx_sanity_check"
