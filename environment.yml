@@ -59,4 +59,3 @@ dependencies:
       - typing-extensions==4.15.0
       - xdg==6.0.0
       - xtract==0.1a3
-prefix: /home/ct/miniconda3/envs/rtl

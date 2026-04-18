@@ -1,0 +1,50 @@
+# .github/workflows/sim.yml
+name: RTL Simulation
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  simulate:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Install GHDL
+      run: sudo apt install -y ghdl
+
+    - name: Setup conda environment
+      uses: conda-incubator/setup-miniconda@v3
+      with:
+        environment-file: environment.yml
+        activate-environment: rtl
+
+    - name: Run UART TX tests
+      run: |
+        cd uart_tx
+        make COCOTB_TEST_MODULES="test_uart_tx"
+        make COCOTB_TEST_MODULES="test_uart_tx_sanity_check"
+
+    - name: Run UART RX tests
+      run: make -C uart_rx
+
+    - name: Run Top Level tests
+      run: make -C top_level
+
+    - name: Generate badges
+      if: always()
+      run: python3 generate_badges.py
+
+    - name: Commit badges
+      if: always()
+      run: |
+        git config user.name "github-actions"
+        git config user.email "github-actions@github.com"
+        git add badges/
+        git diff --staged --quiet || git commit -m "ci: update test badges"
+        git push
