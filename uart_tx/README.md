@@ -69,7 +69,6 @@ Validates the coherence of the UART frame output.
 
 ![Test plot](sim_build/uart_tx_trivial_data_wave.png)
 
-### Test validation
 
 ## d. Sending 100 random frames
 
