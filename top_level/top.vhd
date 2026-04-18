@@ -1,109 +1,126 @@
 library ieee;
-  use ieee.std_logic_1164.all;
-  use ieee.numeric_std.all;
-package ../uart_rx/uart_rx.vhd;
+use ieee.std_logic_1164.all;
+use ieee.numeric_std.all;
+--use ../uart_rx/uart_rx.vhd;
 
 
 
 entity top is
     generic (
         DATA_BITS : integer := 12;
-        CLK_UART_RX_FREQ : integer 50_000_000;
-        BAUD_RX_RATE : integer 115200;
+        CLK_UART_RX_FREQ : integer := 50_000_000;
+        CLK_UART_TX_FREQ : integer := 115200 --BAUD_RATE
     );
     port (
-        clk_i      : in  std_logic;
-        rst_i      : in  std_logic;
-        --UART_RX
-        uart_rx_data_i : in std_logic_vector((DATA_BITS-1) downto 0);
-        
-        --UART_TX
-        uart_tx_data_o : in std_logic_vector((DATA_BITS-1) downto 0)
+        clk_uart_tx_i    : in  std_logic;                                  -- clock                                                     
+        clk_uart_rx_i    : in  std_logic;                                  -- clock                             
+        rst_i            : in  std_logic;                                  -- reset signal                                 
+        uart_rx_i        : in  std_logic;                                  -- uart rx frame                                                                  
+        data_o           : out std_logic_vector((DATA_BITS-1) downto 0);   -- data decoded by uart rx component                                 
+        random_data_i    : in  std_logic_vector((DATA_BITS-1) downto 0);   -- data to be encoded by uart tx component                                                 
+        tx_order_i       : in  std_logic;                                  -- tx order                                  
+        uart_tx_o        : out std_logic;                                  -- uart tx frame                                 
+        flag_rx_o        : out std_logic;                                  -- flag : uart rx component received frame                                 
+        tx_busy_o        : out std_logic                                   -- flag : uart tx component is busy sending frame                                 
+
         
     );
 end entity top;
 
 architecture rtl_top of top is
 
-     -- latch pour enregistrer uart_rx_data_i 
-    signal b : std_logic_vector((DATA_BITS-1) downto 0);
-    signal b_saved : integer range 0 to 1; --booléen pour indiquer si les data ont étés sauvés
+--- Signals ---
+signal clk_uart_tx_s     : std_logic;                                  -- (signal) clock  
+signal clk_uart_rx_s     : std_logic;                                  -- (signal) clock                                         
+signal rst_s             : std_logic;                                  -- (signal) reset signal                               
+signal uart_rx_frame_s   : std_logic;                                  -- (signal) uart rx frame                               
+signal data_s            : std_logic_vector((DATA_BITS-1) downto 0);   -- (signal) data decoded by uart rx component            
+signal flag_rx_s         : std_logic;                                  -- (signal) flag : uart rx component received frame               
+signal random_data_s     : std_logic_vector((DATA_BITS-1) downto 0);   -- (signal) data to be encoded by uart tx component                                             
+signal tx_order_s        : std_logic;                                  -- (signal) tx order                                       
+signal tx_busy_s         : std_logic;                                  -- (signal) flag : uart tx component is busy sending frame                   
+signal uart_tx_frame_s   : std_logic       ;                           -- (signal) uart tx frame              
 
-    -- Rapport CLKS_RX_PER_BIT / BAUD_RX_RATE = nombre de coups d'horloge Rx par bit reçu
-    constant CLKS_RX_PER_BIT : integer := CLK_UART_RX_FREQ / BAUD_RX_RATE; -- 1 coup d'horloge / bit envoye
 
+--- UART Rx ---
     component uart_rx is
     generic (
-        DATA_BITS    : integer := 12;
-        CLK_FREQ     : integer := 50_000_000;  -- fréquence horloge système
-        BAUD_RATE    : integer := 115200
+        DATA_BITS    : integer;
+        CLK_FREQ     : integer;  
+        BAUD_RATE    : integer
     );
     port (
-        clk_i  : in  std_logic;
-        rst_i  : in  std_logic;
-        rx_i   : in  std_logic;
-        data_o : out std_logic_vector((DATA_BITS-1) downto 0);
-        flag_rx_o : out std_logic
+        clk_i        : in  std_logic;
+        rst_i        : in  std_logic;
+        rx_i         : in  std_logic;
+        data_o       : out std_logic_vector((DATA_BITS-1) downto 0);
+        flag_rx_o    : out std_logic
     );
     end component;
 
+--- UART Tx ---
+    component uart_tx is
+    generic (
+        DATA_BITS    : integer;
+        CLK_FREQ     : integer   
+    );
+    port (
+        clk_i      : in  std_logic;
+        rst_i      : in  std_logic;
+        data_i     : in std_logic_vector((DATA_BITS-1) downto 0);
+        tx_o       : out  std_logic;
+        tx_order_i : in std_logic;
+        tx_busy_o  : out std_logic
+    );
+    end component;
+
+
+
 begin
 
-process(clk_i, rst_i)
-begin
-    if rst_i = '1' then
-        tx_o <= '1';
-        flag_tx_o <= '0';
-        --internal signals
-        b <= (others => '0');
-        clk_count <= 0 ;
-        bit_count <= 0;
-
-        
-    elsif rising_edge(clk_i) then
-
-            if tx_order_i = '1' then
-                if b_saved = 0 then
-                    b <= data_i;
-                    b_saved <= 1;
-                    flag_tx_o <= '0';
-                end if ;
+--- Signals mapping ---
+clk_uart_tx_s    <= clk_uart_tx_i   ;
+clk_uart_rx_s    <= clk_uart_rx_i   ;
+rst_s            <= rst_i           ;
+uart_rx_frame_s  <= uart_rx_i       ;
+data_o           <= data_s          ;
+flag_rx_o        <= flag_rx_s       ;
+random_data_s    <= random_data_i   ;
+tx_order_s       <= tx_order_i      ;
+tx_busy_o        <= tx_busy_s       ;
+uart_tx_o        <= uart_tx_frame_s ;
 
 
-                -- Envoi d'un bit
-                if clk_count < CLKS_PER_BIT -1 then -- CLKS_PER_BIT = 1
-                    clk_count <= clk_count + 1;
+--- Components instantiation ---
 
-                else 
-                    if bit_count = 0 then   
-                        tx_o <= '0'; --START bit
-                        bit_count <= bit_count +1;
-                    
-                    elsif bit_count < DATA_BITS + 1 then --"START + DATA" = DATA_BITS + 1 
-                        tx_o <= b(bit_count-1);
-                        bit_count <= bit_count + 1;
-                        
+i_uart_rx : uart_rx
+  generic map (
+      DATA_BITS    => DATA_BITS,
+      CLK_FREQ     => CLK_UART_RX_FREQ,
+      BAUD_RATE    => CLK_UART_TX_FREQ
+  )
+    port map(
+        clk_i => clk_uart_rx_s,      
+        rst_i => rst_s,  
+        rx_i => uart_rx_frame_s,   
+        data_o => data_s, 
+        flag_rx_o => flag_rx_s 
+    );
 
-                    else 
-                        tx_o <= '1'; --STOP bit
-                        flag_tx_o <= '1';
+i_uart_tx : uart_tx
+    generic map (
+        DATA_BITS    => DATA_BITS,
+        CLK_FREQ     => CLK_UART_TX_FREQ
+    )
+    port map (
+        clk_i     =>  clk_uart_tx_s,
+        rst_i     =>  rst_s,
+        data_i     => random_data_s,
+        tx_o       => uart_tx_frame_s,
+        tx_order_i => tx_order_s,
+        tx_busy_o  => tx_busy_s 
+    );
 
-                        --Reset for next UART Tx
-                        b <= (others => '0');
-                        b_saved <= 0;
-                        clk_count <= 0 ;
-                        bit_count <= 0;
 
 
-                    end if;
-                clk_count <= 0; --reset for next bit
-
-                end if;
-            
-            end if;
-
-    end if;
-
-end process;
-
-end architecture top;
+end architecture rtl_top;

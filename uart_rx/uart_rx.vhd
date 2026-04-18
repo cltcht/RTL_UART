@@ -35,6 +35,10 @@ process(clk_i, rst_i)
 begin
     if rst_i = '1' then
         state <= IDLE;
+        clk_count <= 0;
+        flag_rx_o <= '0';
+        data_o <= (others => '0');
+        b <= (others => '0');
     elsif rising_edge(clk_i) then
         case state is
             when IDLE =>

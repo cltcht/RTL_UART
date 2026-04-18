@@ -1,10 +1,17 @@
+#C. Cho.
+#############
+# LIBRARIES #
+#############
 import cocotb
 from cocotb.clock import Clock, Timer
-from cocotb.triggers import RisingEdge
+from cocotb.triggers import *
 import numpy as np
 from asyncio import CancelledError
+import sys
+sys.path.append("../common")
 from common.clock_and_logger import *
-from common.common_uart import *
+import os
+import logging
 
 
 def build_frame_UART(DATA_hex:float, START: bool, STOP: bool, len_data:int)->list:

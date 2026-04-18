@@ -1,8 +1,8 @@
 SIM          = ghdl
 TOPLEVEL_LANG = vhdl
-VHDL_SOURCES  = $(PWD)/uart_rx.vhd 
-TOPLEVEL      = uart_rx
-COCOTB_TEST_MODULES        = "test_uart_rx"
+VHDL_SOURCES  = $(PWD)/top.vhd $(PWD)/../uart_tx/uart_tx.vhd $(PWD)/../uart_rx/uart_rx.vhd
+TOPLEVEL      = top
+COCOTB_TEST_MODULES        = "test_top"
 SIM_ARGS = --vcd=simulation.vcd
 
 

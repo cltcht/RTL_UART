@@ -1,8 +1,17 @@
+#C. Cho.
+#############
+# LIBRARIES #
+#############
 import cocotb
 from cocotb.clock import Clock, Timer
-from cocotb.triggers import RisingEdge
+from cocotb.triggers import *
 import numpy as np
 from asyncio import CancelledError
+import sys
+sys.path.append("../common")
+from common.clock_and_logger import *
+from common.common_uart import *
+import os
 import logging
 
 
@@ -44,7 +53,7 @@ class sim_logger:
 
 class clock_management :
     def __init__(self, clk:cocotb.handle.LogicObject, clk_period:float):
-        """_summary_
+        """
 
         Args:
             clk (cocotb.handle.LogicObject): cocotb clock signal
@@ -55,7 +64,7 @@ class clock_management :
         self.clk_period = clk_period*1.0
 
 
-    async def clock_start(self):
+    async def clock_start_count(self):
         """Assynchronous function \n
            ABSOLUTELY NEED TO BE STARTED WITH cocotb.start_soon()
            ON THE SAME TIME AS clk
@@ -80,8 +89,13 @@ class clock_management :
             critical_error_logger = sim_logger("wait_until")
             critical_error_logger.print_critical_error("clk_period isn't a multiple of time : unknown/unstable state")
             raise ValueError
-        cycles = time//self.clk_period
-        for _ in range(int(cycles)+1):
+        cycles = int(time/self.clk_period)
+        for _ in range(int(cycles)):
             await RisingEdge(self.clk)
+    
+    async def reset_delay(signal, delay):
+        await Timer(delay, unit="ns")
+        await ReadWrite()
+        signal.value = 0
 
 

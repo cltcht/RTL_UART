@@ -2,13 +2,38 @@
 
 MODULE=${1:-"uart_tx"}
 
-echo "=== TEST $MODULE ==="
-make -C $MODULE
-EXIT_CODE=$?
+if [ "$MODULE" = "uart_tx" ]; then
+    echo "=== TEST $MODULE ==="
+    #Test test_uart_tx"
+    make -C $MODULE COCOTB_TEST_MODULES="test_uart_tx"
+    EXIT_CODE=$?
+    gtkwave $MODULE/simulation_test_uart_tx.vcd -S $MODULE/waves_uart_tx.tcl 
+    gtkwave --exit
 
-# Lancer GTKWave même si le test a échoué
-gtkwave $MODULE/simulation.vcd -S $MODULE/waves.tcl 
-gtkwave --exit
+    #Test test_uart_tx_sanity_check"
+    make -C $MODULE COCOTB_TEST_MODULES="test_uart_tx_sanity_check"
+    EXIT_CODE=$?
+    gtkwave $MODULE/simulation_test_uart_tx_sanity_check.vcd -S $MODULE/waves_uart_tx_sanity_check.tcl 
+    gtkwave --exit
 
-# Retourner le code d'erreur original
-exit $EXIT_CODE
+    exit $EXIT_CODE
+
+elif [ "$MODULE" = "uart_rx" ]; then
+    echo "=== TEST $MODULE ==="
+    make -C $MODULE
+    EXIT_CODE=$?
+    gtkwave $MODULE/simulation.vcd -S $MODULE/waves_uart_rx.tcl
+    gtkwave --exit
+
+    exit $EXIT_CODE
+
+elif [ "$MODULE" = "top_level" ]; then
+    echo "=== TEST $MODULE ==="
+    make -C $MODULE
+    EXIT_CODE=$?
+    gtkwave $MODULE/simulation.vcd -S $MODULE/waves.tcl
+    gtkwave --exit
+
+    exit $EXIT_CODE
+
+fi

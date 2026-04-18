@@ -19,11 +19,6 @@ import os
 # FUNCTIONS #
 #############
 
-async def reset_delay(signal, delay):
-    await Timer(delay, unit="ms")
-    await ReadWrite()
-    signal.value = 0
-
 async def tx_order_signal(dut, up_time:float):
     """Step function for tx_order
 
@@ -35,7 +30,7 @@ async def tx_order_signal(dut, up_time:float):
     await ReadWrite()
     dut.tx_order_i.value = 1
 
-    cocotb.start_soon(reset_delay(dut.tx_order_i, up_time))
+    cocotb.start_soon(clock_management.reset_delay(dut.tx_order_i, up_time))
 
 
              
@@ -64,7 +59,7 @@ async def test_sanity_check(dut, len_data:int, START:bool, STOP: bool, verbose:b
     #0-th cycle : Tx starts
     await RisingEdge(dut.tx_busy_o)
     #1-th cycle : Sending START bit
-    await Timer(round(PERIOD), unit = "ms") 
+    await Timer(round(PERIOD), unit = "ns") 
     await ReadOnly()
     try :
         assert dut.tx_o.value == START
@@ -105,7 +100,7 @@ async def test_data_validity(dut, len_data:int, UART_FRAME:list, verbose:bool):
     if verbose : error_logger.print_info(f"Theoratical Frame is {UART_FRAME}")
 
     #1-th cycle : Sending START bit
-    await Timer(round(PERIOD), unit = "ms") 
+    await Timer(round(PERIOD), unit = "ns") 
     #For len_data cycles : check bit validity 
     for k in range (len_data):
         await RisingEdge(dut.clk_i)
@@ -126,24 +121,28 @@ logger = sim_logger("uart TX")
 
 #Generics for RTL design
 CLK_FREQ = 115200
-BAUD_RATE = CLK_FREQ
-CLK_PER_BIT = CLK_FREQ // BAUD_RATE
-PERIOD = 8.6 #ms
-
+PERIOD = int(1E9/CLK_FREQ) #ns
+PERIOD = 1
+logger.print_info(f"PERIOD = {PERIOD}")
 
 
 @cocotb.test()
-async def two_frames_random_data(dut):
+async def send_hundred_frames_random_data(dut):
+    """Sets random data as input of Tx component.  
+    Validates the coherence of the UART frame output.
+
+    Args:
+        dut (cocotb dut): Device under test
+    """
     #UART FRAME head, tail and data
     START = 0
     STOP = 1
-    len_data = 8
-    DATA_1st_frame = np.random.randint(low=0, high=2**(len_data))
-    DATA_2nd_frame = np.random.randint(low=0, high=2**(len_data))
+    len_data = 12
+    DATA_frames = [np.random.randint(low=0, high=2**(len_data)) for n in range(100)]
+    verbose = False
     
-
     # Clock TX
-    clk_tx = Clock(dut.clk_i, PERIOD, unit="ms") 
+    clk_tx = Clock(dut.clk_i, PERIOD, unit="ns") 
     
     cocotb.start_soon(clk_tx.start())
 
@@ -153,10 +152,65 @@ async def two_frames_random_data(dut):
     dut.rst_i.value = 1
     dut.data_i.value = 0x0
     dut.tx_order_i.value = 0
-    logger.print_info(f"Reset set up\n")
+    if verbose : 
+        logger.print_info(f"Reset set up\n")
+        logger.print_info(f"dut.DATA_BITS.value = {int(dut.DATA_BITS.value)}")
+        logger.print_info(f"PERIOD = {PERIOD} ns")
 
-    logger.print_info(f"dut.DATA_BITS.value = {int(dut.DATA_BITS.value)}")
-    logger.print_info(f"PERIOD = {PERIOD} ms")
+    for n in range(100):
+        #1st frame
+        await RisingEdge(dut.clk_i)
+        await ReadWrite(dut.clk_i)
+        dut.rst_i.value = 0
+        if verbose : logger.print_info(f"Reset set down\n")
+        dut.data_i.value = DATA_frames[n]
+
+        cocotb.start_soon(test_sanity_check(dut, len_data, START, STOP, verbose))
+        cocotb.start_soon(test_data_validity(dut, len_data, build_frame_UART(DATA_frames[n], START, STOP, len_data), verbose))
+
+        cocotb.start_soon(tx_order_signal(dut, up_time=round(PERIOD)))
+
+
+        #2nd frame
+        await Timer(round(20*PERIOD), unit="ns")
+        await RisingEdge(dut.clk_i)
+        await Timer(round(2*PERIOD), "ns") #Waiting for tx order to be received by system
+        await ReadWrite(dut.clk_i)
+
+
+
+@cocotb.test()
+async def send_two_frames_trivial_data(dut):
+    """Sets 0x000 and 0xFFF as input of Tx component.  
+    Validates the coherence of the UART frame output.
+
+    Args:
+        dut (cocotb dut): Device under test
+    """
+    #UART FRAME head, tail and data
+    START = 0
+    STOP = 1
+    len_data = 12
+    DATA_1st_frame = 0x000
+    DATA_2nd_frame = 0xFFF
+    verbose = False
+    
+
+    # Clock TX
+    clk_tx = Clock(dut.clk_i, PERIOD, unit="ns") 
+    
+    cocotb.start_soon(clk_tx.start())
+
+    # Reset
+    await RisingEdge(dut.clk_i)
+    await ReadWrite(dut.clk_i)
+    dut.rst_i.value = 1
+    dut.data_i.value = 0x0
+    dut.tx_order_i.value = 0
+    if verbose :
+        logger.print_info(f"Reset set up\n")
+        logger.print_info(f"dut.DATA_BITS.value = {int(dut.DATA_BITS.value)}")
+        logger.print_info(f"PERIOD = {PERIOD} ns")
 
    
     #1st frame
@@ -166,8 +220,8 @@ async def two_frames_random_data(dut):
     logger.print_info(f"Reset set down\n")
     dut.data_i.value = DATA_1st_frame
 
-    cocotb.start_soon(test_sanity_check(dut, len_data, START, STOP, True))
-    cocotb.start_soon(test_data_validity(dut, len_data, build_frame_UART(DATA_1st_frame, START, STOP, len_data), True))
+    cocotb.start_soon(test_sanity_check(dut, len_data, START, STOP, verbose))
+    cocotb.start_soon(test_data_validity(dut, len_data, build_frame_UART(DATA_1st_frame, START, STOP, len_data), verbose))
 
     cocotb.start_soon(tx_order_signal(dut, up_time=round(PERIOD)))
 
@@ -176,62 +230,15 @@ async def two_frames_random_data(dut):
     # await ReadWrite(dut.clk_i)
 
     #2nd frame
-    await Timer(round(20*PERIOD), unit="ms")
+    await Timer(round(20*PERIOD), unit="ns")
     await RisingEdge(dut.clk_i)
-    await Timer(round(2*PERIOD), "ms") #Waiting for tx order to be received by system
+    await Timer(round(2*PERIOD), "ns") #Waiting for tx order to be received by system
     await ReadWrite(dut.clk_i)
     dut.data_i.value = DATA_2nd_frame
 
-    cocotb.start_soon(test_data_validity(dut, len_data, build_frame_UART(DATA_2nd_frame, START, STOP, len_data), True))
+    cocotb.start_soon(test_sanity_check(dut, len_data, START, STOP, verbose))
+    cocotb.start_soon(test_data_validity(dut, len_data, build_frame_UART(DATA_2nd_frame, START, STOP, len_data), verbose))
 
     cocotb.start_soon(tx_order_signal(dut, up_time=round(PERIOD)))
 
-    await Timer(round(20*PERIOD), unit="ms")
-
-
-
-#@cocotb.test()
-async def hundred_frames_random_data(dut):
-    #UART FRAME head, tail and data
-    START = 0
-    STOP = 1
-    len_data = 8
-    DATA_frames = [np.random.randint(low=0, high=2**(len_data)) for n in range(100)]
-    
-    # Clock TX
-    clk_tx = Clock(dut.clk_i, PERIOD, unit="ms") 
-    
-    cocotb.start_soon(clk_tx.start())
-
-    # Reset
-    await RisingEdge(dut.clk_i)
-    await ReadWrite(dut.clk_i)
-    dut.rst_i.value = 1
-    dut.data_i.value = 0x0
-    dut.tx_order_i.value = 0
-    logger.print_info(f"Reset set up\n")
-
-    logger.print_info(f"dut.DATA_BITS.value = {int(dut.DATA_BITS.value)}")
-
-    for n in range(100):
-        #1st frame
-        await RisingEdge(dut.clk_i)
-        await ReadWrite(dut.clk_i)
-        dut.rst_i.value = 0
-        logger.print_info(f"Reset set down\n")
-        dut.data_i.value = DATA_frames[n]
-
-        cocotb.start_soon(test_sanity_check(dut, len_data, START, STOP, False))
-        cocotb.start_soon(test_data_validity(dut, len_data, build_frame_UART(DATA_frames[n], START, STOP, len_data), False))
-
-        cocotb.start_soon(tx_order_signal(dut, up_time=round(PERIOD)))
-
-
-        #2nd frame
-        await Timer(round(20*PERIOD), unit="ms")
-        await RisingEdge(dut.clk_i)
-        await Timer(round(2*PERIOD), "ms") #Waiting for tx order to be received by system
-        await ReadWrite(dut.clk_i)
-
-
-
+    await Timer(round(20*PERIOD), unit="ns")

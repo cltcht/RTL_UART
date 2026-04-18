@@ -4,7 +4,7 @@ library ieee;
 
 entity uart_tx is
     generic (
-        DATA_BITS    : integer := 8;
+        DATA_BITS    : integer := 12;
         CLK_FREQ     : integer := 115200;  -- frequency of FPGA
         BAUD_RATE    : integer := 115200   -- Uart frequency
     );
@@ -24,9 +24,6 @@ architecture rtl_uart_tx of uart_tx is
     signal b : std_logic_vector((DATA_BITS-1) downto 0);
 
     -- CLK_FREQ / BAUD_RATE = Clk hits per bit being sent
-    constant CLKS_PER_BIT : integer := CLK_FREQ / BAUD_RATE; -- 1 hit / bit
-
-    signal clk_count : integer range 0 to CLKS_PER_BIT - 1;
     signal bit_count : integer range 0 to DATA_BITS+2;
 
     --flags
@@ -44,7 +41,6 @@ begin
         --internal signals
         b <= (others => '0');
         b_saved <= '0';
-        clk_count <= 0 ;
         bit_count <= 0;
         frame_sent <= '0';
 
@@ -55,7 +51,6 @@ begin
                 --Reset for next UART Tx
                 b <= (others => '0');
                 b_saved <= '0';
-                clk_count <= 0 ;
                 bit_count <= 0;
         -- FRAME State : Frame isn't being sent/already sent, received order
             elsif (tx_order_i = '1') and (frame_sent = '0') and (is_busy = '0') then
@@ -68,10 +63,8 @@ begin
         -- FRAME State : Frame is being sent
             elsif (is_busy = '1') and (frame_sent = '0') then
                 -- Sending i-th bit
-                if clk_count < CLKS_PER_BIT -1 then -- CLKS_PER_BIT = 1
-                    clk_count <= clk_count + 1;
 
-                else 
+                 
                     if bit_count = 0 then   
                         tx_o <= '0'; --START bit
                         bit_count <= bit_count +1;
@@ -88,16 +81,15 @@ begin
                         frame_sent <= '1';
 
                     end if;
-                clk_count <= 0; --reset for next bit
+                
 
-                end if;
+                
         -- FRAME State : Already sent, waiting for tx_order_i reset
         -- for safety do not release busy flag here
             elsif (tx_order_i = '1') and (frame_sent = '1') and (is_busy = '1') then
                 --Reset for next UART Tx
                 b <= (others => '0');
                 b_saved <= '0';
-                clk_count <= 0 ;
                 bit_count <= 0;
 
         -- FRAME State : Already sent, tx_order_i was resetted 
@@ -108,7 +100,6 @@ begin
                 --Reset for next UART Tx
                 b <= (others => '0');
                 b_saved <= '0';
-                clk_count <= 0 ;
                 bit_count <= 0;
             end if;
 
