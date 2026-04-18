@@ -1,4 +1,4 @@
-name: RTL Simulation
+name: RTL Simulation - top level
 
 on:
   push:

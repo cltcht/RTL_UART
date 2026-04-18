@@ -1,6 +1,9 @@
 # RTL_UART
 Building UART communication RTL components from scratch in VHDL.
-  
+
+![RTL Simulation - uart_tx](https://github.com/cltcht/RTL_UART/actions/workflows/sim_uart_tx.yml/badge.svg)
+![RTL Simulation - uart_rx](https://github.com/cltcht/RTL_UART/actions/workflows/sim_uart_rx.yml/badge.svg)
+![RTL Simulation - top level](https://github.com/cltcht/RTL_UART/actions/workflows/sim_uart_top.yml/badge.svg)  
 
 ## 0 - Summary
 Personnal project to train on cocotb coroutines on UART firmware.  
