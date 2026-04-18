@@ -36,8 +36,6 @@ Validates that `data_o` state is 0x000 and 0xFFF.
 
 ![Test plot](sim_build/uart_rx_trivial_data_wave.png)  
 
-### Test validation
-
 
 ## b. get_hundred_frames_random_data()
 
@@ -49,4 +47,6 @@ Validates that `data_o` state is coherent with input frame.
 
 ![Test plot](sim_build/uart_rx_random_data_wave.png)  
 
-### Test validation
+## Test validation
+
+![RTL Simulation - uart_rx](https://github.com/cltcht/RTL_UART/actions/workflows/sim_uart_rx.yml/badge.svg) 

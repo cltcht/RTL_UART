@@ -42,8 +42,6 @@ Validates that Tx doesn't happen while reset is up.
 
 ![Test plot](sim_build/uart_tx_wave_sanity_late_reset.png)  
 
-### Test validation
-
 ## b. Sanity check : Tx order while busy
 
 ### Test description
@@ -58,8 +56,6 @@ Validates that component isn't altered if component receives a new tx order :
 ### Test plot
 
 ![Test plot](sim_build/uart_tx_wave_sanity_tx_busy.png)
-
-### Test validation
 
 ## c. Sending 2 trivial frames
 
@@ -88,7 +84,9 @@ Validates the coherence of the UART frame output.
 
 ![Test plot](sim_build/uart_tx_random_data_wave.png)
 
-### Test validation
+## Test validation
+
+![RTL Simulation - uart_tx](https://github.com/cltcht/RTL_UART/actions/workflows/sim_uart_tx.yml/badge.svg) 
 
 
 

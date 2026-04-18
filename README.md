@@ -1,8 +1,8 @@
 # RTL_UART
 Building UART communication RTL components from scratch in VHDL.
 
-![RTL Simulation - uart_tx](https://github.com/cltcht/RTL_UART/actions/workflows/sim_uart_tx.yml/badge.svg)
-![RTL Simulation - uart_rx](https://github.com/cltcht/RTL_UART/actions/workflows/sim_uart_rx.yml/badge.svg)
+![RTL Simulation - uart_tx](https://github.com/cltcht/RTL_UART/actions/workflows/sim_uart_tx.yml/badge.svg)  
+![RTL Simulation - uart_rx](https://github.com/cltcht/RTL_UART/actions/workflows/sim_uart_rx.yml/badge.svg)  
 ![RTL Simulation - top level](https://github.com/cltcht/RTL_UART/actions/workflows/sim_uart_top.yml/badge.svg)  
 
 ## 0 - Summary
@@ -109,6 +109,6 @@ To run the tests execute :
 
 Running scripts will execute `Tcl` scripts to enhance plots, *see /xxx/wave_xxx.tcl*
 
-Test results can be seen in console or in report.
+Test results can be seen in console displayed with `cocotb` library.
 
-Test report is written as `report_uart.pdf` file.
+Test details are written as `.md` files in respective folders.

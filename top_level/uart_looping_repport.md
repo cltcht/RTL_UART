@@ -34,7 +34,6 @@ Validates the coherence of the Rx component data output.
 
 ![Test plot](sim_build/uart_trivial_data_wave.png)
 
-### Test validation
 
 ## b. Sending 10 random frames
 
@@ -49,11 +48,13 @@ Validates the coherence of the Rx component data output.
 
 **function: uart_top_looping_ten_frames_random_data**
 
-### Test plot
+## Test plot
 
 ![Test plot](sim_build/uart_random_data_wave.png)
 
 ### Test validation
+
+![RTL Simulation - top level](https://github.com/cltcht/RTL_UART/actions/workflows/sim_uart_top.yml/badge.svg) 
 
 
 
