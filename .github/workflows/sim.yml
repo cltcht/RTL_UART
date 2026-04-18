@@ -27,14 +27,19 @@ jobs:
     - name: Run UART TX tests
       run: |
         cd uart_tx
+        conda activate rtl
         make COCOTB_TEST_MODULES="test_uart_tx"
         make COCOTB_TEST_MODULES="test_uart_tx_sanity_check"
 
     - name: Run UART RX tests
-      run: make -C uart_rx
+      run: |
+        conda activate rtl
+        make -C uart_rx
 
     - name: Run Top Level tests
-      run: make -C top_level
+      run: |
+        conda activate rtl
+        make -C top_level
 
     - name: Generate badges
       if: always()
