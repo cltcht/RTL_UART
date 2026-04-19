@@ -112,3 +112,5 @@ Running scripts will execute `Tcl` scripts to enhance plots, *see /xxx/wave_xxx.
 Test results can be seen in console displayed with `cocotb` library.
 
 Test details are written as `.md` files in respective folders.
+You can use your favorite Markdown visualizer or the following command to see them as HTML files :  
+`pandoc -f markdown -t html input.md -o output.html`
